@@ -1,0 +1,28 @@
+# https://github.com/yandex/ClickHouse/blob/master/docker-compose.yml
+version: "3"
+
+services:
+  server:
+    image: yandex/clickhouse-server
+    hostname: clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+#    ports:
+#      - 9000:9000
+  client:
+    image: yandex/clickhouse-client
+    hostname: clickhouse-client
+    depends_on:
+      - server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ./meta_data:/root/meta_data:rw,cached
+      - ../data:/root/data:rw,cached
+    entrypoint: /bin/bash -c 'while true; do sleep 5; done'
+#    ports:
+#      - 8123:8123
