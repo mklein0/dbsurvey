@@ -1,0 +1,245 @@
+{
+  "metadata" : {
+    "name" : "web_stat",
+    "user_save_timestamp" : "1970-01-01T00:00:00.000Z",
+    "auto_save_timestamp" : "1970-01-01T00:00:00.000Z",
+    "language_info" : {
+      "name" : "scala",
+      "file_extension" : "scala",
+      "codemirror_mode" : "text/x-scala"
+    },
+    "trusted" : true,
+    "customLocalRepo" : null,
+    "customRepos" : null,
+    "customDeps" : null,
+    "customImports" : null,
+    "customArgs" : null,
+    "customSparkConf" : null
+  },
+  "cells" : [ {
+    "metadata" : {
+      "id" : "49D9FC23689E486DB3C2406181009D93"
+    },
+    "cell_type" : "markdown",
+    "source" : "# Spark & Parquet Example\n## WEB STAT\n### Create Parquet File"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "659731AD257F423F91798DE3C5388658"
+    },
+    "cell_type" : "code",
+    "source" : "import org.apache.spark._\nimport org.apache.spark.SparkContext._\nimport org.apache.spark.rdd._\nimport org.apache.spark.sql._\n\nval sparkSql = new SQLContext(sparkContext)\nimport sparkSql.implicits._\n\nval flatParquet = \"/opt/docker/notebooks/sightmachine/web_stat.parquet\"",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.apache.spark._\nimport org.apache.spark.SparkContext._\nimport org.apache.spark.rdd._\nimport org.apache.spark.sql._\nsparkSql: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@23b70808\nimport sparkSql.implicits._\nflatParquet: String = /opt/docker/notebooks/sightmachine/web_stat.parquet\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 1,
+      "time" : "Took: 2 seconds 782 milliseconds, at 2019-3-26 22:44"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "FEF3739435684B968A93AC827CC9A090"
+    },
+    "cell_type" : "markdown",
+    "source" : "Create Table Schema in Spark"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "6BEA20EDEDA2456683397631F67F3D04"
+    },
+    "cell_type" : "code",
+    "source" : "import java.sql.Timestamp\n\n\ncase class WebStatFlat(\n    HOST: String,\n    DOMAIN: String,\n    FEATURE: String,\n    DATE: Timestamp,\n    USAGE__CORE: Long,\n    USAGE__DB: Long,\n    STATS__ACTIVE_VISITOR: Integer\n)\n\ndef transformRow(r: org.apache.spark.sql.Row): WebStatFlat = {\n  WebStatFlat(\n    r.getString(0),\n    r.getString(1),\n    r.getString(2),\n    Timestamp.valueOf(r.getString(3)),\n    r.getString(4).toLong,\n    r.getString(5).toLong,\n    r.getString(6).toInt\n  )\n}",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import java.sql.Timestamp\ndefined class WebStatFlat\ntransformRow: (r: org.apache.spark.sql.Row)WebStatFlat\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 39,
+      "time" : "Took: 533 milliseconds, at 2019-3-26 23:4"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "050A4BCFEF824FE0979D5A47914C7CD5"
+    },
+    "cell_type" : "markdown",
+    "source" : "Load CSV Data"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "F56F554FB30B4E029B6E8036FDF1684D"
+    },
+    "cell_type" : "code",
+    "source" : "val csvfile = sparkSql.read\n                      .format(\"csv\")\n                      .option(\"delimiter\", \",\")\n                      .load(\"/opt/docker/notebooks/sightmachine/data/web_stat/WEB_STAT.csv\")\n                      .rdd\n                      .map(r => transformRow(r))\n                      .toDF()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "csvfile: org.apache.spark.sql.DataFrame = [HOST: string, DOMAIN: string, FEATURE: string, DATE: timestamp, USAGE__CORE: bigint, USAGE__DB: bigint, STATS__ACTIVE_VISITOR: int]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 40,
+      "time" : "Took: 1 second 16 milliseconds, at 2019-3-26 23:4"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "C34854B5A577479F99B23D9622A48329"
+    },
+    "cell_type" : "markdown",
+    "source" : "Write Parquet Files"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "0B284B6A28664A4C99DB0DB7D7008765"
+    },
+    "cell_type" : "code",
+    "source" : "// Hack to run shell commands\nimport sys.process._\n(\"rm -rf \" + flatParquet).!!\n\ncsvfile.write\n       .option(\"compression\", \"snappy\")\n       .parquet(flatParquet)\n\n(\"ls -l \" + flatParquet).!!",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import sys.process._\nres73: String = \n\"total 16\n-rw-r--r-- 1 root root    0 Mar 26 23:04 _SUCCESS\n-rw-r--r-- 1 root root  761 Mar 26 23:04 _common_metadata\n-rw-r--r-- 1 root root 2492 Mar 26 23:04 _metadata\n-rw-r--r-- 1 root root 2306 Mar 26 23:04 part-r-00000-c994d623-30e4-46f7-a139-6bfd8002fa33.gz.parquet\n-rw-r--r-- 1 root root 2313 Mar 26 23:04 part-r-00001-c994d623-30e4-46f7-a139-6bfd8002fa33.gz.parquet\n\"\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "total 16\n-rw-r--r-- 1 root root    0 Mar 26 23:04 _SUCCESS\n-rw-r--r-- 1 root root  761 Mar 26 23:04 _common_metadata\n-rw-r--r-- 1 root root 2492 Mar 26 23:04 _metadata\n-rw-r--r-- 1 root root 2306 Mar 26 23:04 part-r-00000-c994d623-30e4-46f7-a139-6bfd8002fa33.gz.parquet\n-rw-r--r-- 1 root root 2313 Mar 26 23:04 part-r-00001-c994d623-30e4-46f7-a139-6bfd8002fa33.gz.parquet\n"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 41,
+      "time" : "Took: 1 second 152 milliseconds, at 2019-3-26 23:4"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "5D4F347A45F5480187B50C79C3E544CD"
+    },
+    "cell_type" : "markdown",
+    "source" : "### Query Parquet File"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "FDAD554DCCF940FF8A44B203E3DBD4C2"
+    },
+    "cell_type" : "code",
+    "source" : "val flatdf = sparkSql.read.parquet(flatParquet)\nflatdf.registerTempTable(\"WEB_STAT\")",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "flatdf: org.apache.spark.sql.DataFrame = [HOST: string, DOMAIN: string, FEATURE: string, DATE: timestamp, USAGE__CORE: bigint, USAGE__DB: bigint, STATS__ACTIVE_VISITOR: int]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 42,
+      "time" : "Took: 813 milliseconds, at 2019-3-26 23:4"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "A79E597E690C48BE9707D49515FC7EB1"
+    },
+    "cell_type" : "markdown",
+    "source" : "Average Usage by Domain"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "7D39B991EFE04C2B8FE51FD0502C460E"
+    },
+    "cell_type" : "code",
+    "source" : "val query = \"\"\"\nSELECT DOMAIN, AVG(USAGE__CORE) Average_CPU_Usage, AVG(USAGE__DB) Average_DB_Usage \nFROM WEB_STAT \nGROUP BY DOMAIN \nORDER BY DOMAIN DESC\n\"\"\"\nsparkSql.sql(query)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "query: String = \n\"\nSELECT DOMAIN, AVG(USAGE__CORE) Average_CPU_Usage, AVG(USAGE__DB) Average_DB_Usage \nFROM WEB_STAT \nGROUP BY DOMAIN \nORDER BY DOMAIN DESC\n\"\nres61: org.apache.spark.sql.DataFrame = [DOMAIN: string, Average_CPU_Usage: double, Average_DB_Usage: double]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "<div class=\"df-canvas\">\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon3fdc6fdf40c800f4d2a9d748f9666ecd&quot;,&quot;partitionIndexId&quot;:&quot;anonc68b7e78805a630904fd4e35b36abcf0&quot;,&quot;numPartitions&quot;:1,&quot;dfSchema&quot;:{&quot;type&quot;:&quot;struct&quot;,&quot;fields&quot;:[{&quot;name&quot;:&quot;DOMAIN&quot;,&quot;type&quot;:&quot;string&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}},{&quot;name&quot;:&quot;Average_CPU_Usage&quot;,&quot;type&quot;:&quot;double&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}},{&quot;name&quot;:&quot;Average_DB_Usage&quot;,&quot;type&quot;:&quot;double&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}}]}}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/dataframe','../javascripts/notebook/consoleDir'], \n      function(dataframe, extension) {\n        dataframe.call(data, this, extension);\n      }\n    );/*]]>*/</script>\n      <link rel=\"stylesheet\" href=\"/assets/stylesheets/ipython/css/dataframe.css\" type=\"text/css\"/>\n    </div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 34,
+      "time" : "Took: 4 seconds 134 milliseconds, at 2019-3-26 23:2"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "ADDEDC64FD1B47DB8327B04C11D566E2"
+    },
+    "cell_type" : "markdown",
+    "source" : "Sum, Min and Max CPU usage by Salesforce grouped by day"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "99FA5F9D95AA4751BAE81DD21D7A7F2C"
+    },
+    "cell_type" : "code",
+    "source" : "val query = \"\"\"\nSELECT TRUNC(DATE,'DAY') DAY, SUM(USAGE__CORE) TOTAL_CPU_Usage, MIN(USAGE__CORE) MIN_CPU_Usage, MAX(USAGE__CORE) MAX_CPU_Usage \nFROM WEB_STAT \nWHERE DOMAIN LIKE 'Salesforce%' \nGROUP BY TRUNC(DATE,'DAY')\n\"\"\"\nsparkSql.sql(query)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "query: String = \n\"\nSELECT TRUNC(DATE,'DAY') DAY, SUM(USAGE__CORE) TOTAL_CPU_Usage, MIN(USAGE__CORE) MIN_CPU_Usage, MAX(USAGE__CORE) MAX_CPU_Usage \nFROM WEB_STAT \nWHERE DOMAIN LIKE 'Salesforce%' \nGROUP BY TRUNC(DATE,'DAY')\n\"\nres65: org.apache.spark.sql.DataFrame = [DAY: date, TOTAL_CPU_Usage: bigint, MIN_CPU_Usage: bigint, MAX_CPU_Usage: bigint]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "<div class=\"df-canvas\">\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon844966fc2e99a5a43e583c95e396b1d1&quot;,&quot;partitionIndexId&quot;:&quot;anon1f476db0999d1b8df6d9141b7585fbdc&quot;,&quot;numPartitions&quot;:1,&quot;dfSchema&quot;:{&quot;type&quot;:&quot;struct&quot;,&quot;fields&quot;:[{&quot;name&quot;:&quot;DAY&quot;,&quot;type&quot;:&quot;date&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}},{&quot;name&quot;:&quot;TOTAL_CPU_Usage&quot;,&quot;type&quot;:&quot;long&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}},{&quot;name&quot;:&quot;MIN_CPU_Usage&quot;,&quot;type&quot;:&quot;long&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}},{&quot;name&quot;:&quot;MAX_CPU_Usage&quot;,&quot;type&quot;:&quot;long&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}}]}}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/dataframe','../javascripts/notebook/consoleDir'], \n      function(dataframe, extension) {\n        dataframe.call(data, this, extension);\n      }\n    );/*]]>*/</script>\n      <link rel=\"stylesheet\" href=\"/assets/stylesheets/ipython/css/dataframe.css\" type=\"text/css\"/>\n    </div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 36,
+      "time" : "Took: 4 seconds 16 milliseconds, at 2019-3-26 23:3"
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "93DCBD1633504B47B72A5C057CA5F7FD"
+    },
+    "cell_type" : "markdown",
+    "source" : "list host and total active users when core CPU usage is 10X greater than DB usage"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "D78D52747A0D4D9D8B332B691C118AA6"
+    },
+    "cell_type" : "code",
+    "source" : "val query = \"\"\"\nSELECT HOST, SUM(STATS__ACTIVE_VISITOR) TOTAL_ACTIVE_VISITORS \nFROM WEB_STAT \nWHERE USAGE__DB > (USAGE__CORE * 10) \nGROUP BY HOST\n\"\"\"\nsparkSql.sql(query)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "query: String = \n\"\nSELECT HOST, SUM(STATS__ACTIVE_VISITOR) TOTAL_ACTIVE_VISITORS \nFROM WEB_STAT \nWHERE USAGE__DB > (USAGE__CORE * 10) \nGROUP BY HOST\n\"\nres77: org.apache.spark.sql.DataFrame = [HOST: string, TOTAL_ACTIVE_VISITORS: bigint]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "<div class=\"df-canvas\">\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon8bdfcac920495b71d93e29ebd466fec1&quot;,&quot;partitionIndexId&quot;:&quot;anonbac96dfddd1cf97206af71b4ca3ae338&quot;,&quot;numPartitions&quot;:1,&quot;dfSchema&quot;:{&quot;type&quot;:&quot;struct&quot;,&quot;fields&quot;:[{&quot;name&quot;:&quot;HOST&quot;,&quot;type&quot;:&quot;string&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}},{&quot;name&quot;:&quot;TOTAL_ACTIVE_VISITORS&quot;,&quot;type&quot;:&quot;long&quot;,&quot;nullable&quot;:true,&quot;metadata&quot;:{}}]}}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/dataframe','../javascripts/notebook/consoleDir'], \n      function(dataframe, extension) {\n        dataframe.call(data, this, extension);\n      }\n    );/*]]>*/</script>\n      <link rel=\"stylesheet\" href=\"/assets/stylesheets/ipython/css/dataframe.css\" type=\"text/css\"/>\n    </div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 43,
+      "time" : "Took: 3 seconds 424 milliseconds, at 2019-3-26 23:5"
+    } ]
+  } ],
+  "nbformat" : 4
+}

@@ -1,0 +1,17 @@
+# https://hub.docker.com/r/andypetrella/spark-notebook
+# https://github.com/spark-notebook/spark-notebook
+# http://spark-notebook.io/
+version: "3"
+
+services:
+  notebook:
+    container_name: notebook
+    image: andypetrella/spark-notebook:0.8.3-scala-2.11.8-spark-2.2.2-hadoop-2.6.0-with-hive
+    #image: andypetrella/spark-notebook:0.9.0-SNAPSHOT-scala-2.11.8-spark-2.3.0-hadoop-2.7.3-with-hive-with-parquet
+    ports:
+      - '9001:9001'
+      - '9443:9443'
+      - '4040-4045:4040-4045'
+    volumes:
+      - ./meta_data:/opt/docker/notebooks/sightmachine/meta_data:rw,cached
+      - ../data:/opt/docker/notebooks/sightmachine/data:rw,cached
