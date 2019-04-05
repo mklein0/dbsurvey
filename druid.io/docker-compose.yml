@@ -1,0 +1,22 @@
+#  https://github.com/druid-io/docker-druid
+version: "2"
+services:
+
+  standalone:
+    build: .
+    image: druidio/example-cluster
+    container_name: standalone
+    hostname: standalone
+    ports:
+      # - 8081: HTTP (coordinator)
+      # - 8082: HTTP (broker)
+      # - 8083: HTTP (historical)
+      # - 8090: HTTP (overlord)
+      # - 2181 2888 3888: ZooKeeper
+      - "3001:8081"
+      - "3002:8082"
+      - "3003:8083"
+      - "3010:8090"
+    volumes:
+      - ./meta_data:/root/meta_data:rw,cached
+      - ../data:/root/data:rw,cached

@@ -1,0 +1,49 @@
+{
+  "type" : "index",
+  "spec" : {
+    "dataSchema" : {
+      "dataSource" : "web_stat",
+      "parser" : {
+        "type" : "string",
+        "parseSpec" : {
+          "format" : "csv",
+          "timestampSpec": {
+            "column": "date",
+            "format": "iso"
+          },
+          "columns": [
+            "host",
+            "domain",
+            "feature",
+            "date",
+            {"name": "usage.core", "type": "long"},
+            {"name": "usage.db", "type": "long"},
+            {"name": "stats.active_visitor", "type": "long"}
+          ],
+          "dimensionsSpec" : {
+            "dimensions" : [ "host", "domain", "feature", "date", "usage.core", "usage.db", "stats.active_visitor" ]
+          }
+        }
+      },
+      "metricsSpec" : [],
+      "granularitySpec" : {
+        "type" : "uniform",
+        "segmentGranularity" : "second",
+        "queryGranularity" : "second",
+        "rollup": true
+      }
+    },
+    "ioConfig" : {
+      "type" : "index",
+      "firehose" : {
+        "type" : "local",
+        "baseDir" : "/root/data/web_stat",
+        "filter" : "WEB_STAT.csv"
+      },
+      "appendToExisting" : false
+    },
+    "tuningConfig" : {
+      "type" : "index"
+    }
+  }
+}
