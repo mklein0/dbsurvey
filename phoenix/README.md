@@ -5,12 +5,6 @@ Apache Phoenix docker image based on alpine
 ## Small setup
 
 ```
-# load default env as needed
-eval $(docker-machine env default)
-
-# network 
-docker network create vnet
-
 # hbase+phoenix startup
 docker-compose up -d
 
