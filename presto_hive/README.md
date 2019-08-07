@@ -17,6 +17,7 @@ https://hortonworks.com/blog/hive-cheat-sheet-for-sql-users/
 
 https://www.tutorialspoint.com/hive/hive_create_table.htm
 ### Stock Symbol
+#### Default Table
 ```
 # cat /root/meta_data/stock_symbol/STOCK_SYMBOL.hql | /opt/hive/bin/beeline -u jdbc:hive2://localhost:10000
 SLF4J: Class path contains multiple SLF4J bindings.
@@ -87,7 +88,30 @@ No rows affected (1.943 seconds)
 | WMT                  | Walmart               |
 +----------------------+-----------------------+
 10 rows selected (0.196 seconds)
->
+```
+
+#### Transactional Table
+```
+# cat /root/meta_data/stock_symbol/STOCK_SYMBOL_TRANS.hql | /opt/hive/bin/beeline -u jdbc:hive2://localhost:10000
+
+-- Truncate Table & Insert initial value
+> INSERT OVERWRITE TABLE STOCK_SYMBOL VALUES ('CRM','SalesForce.com');
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (2.306 seconds)
+> SELECT * FROM stock_symbol;
++----------------------+-----------------------+
+| stock_symbol.symbol  | stock_symbol.company  |
++----------------------+-----------------------+
+| CRM                  | SalesForce.com        |
++----------------------+-----------------------+
+1 row selected (0.216 seconds)
+> MERGE INTO stock_symbol AS STATE
+USING csv_file AS STREAM
+ON STATE.symbol = STREAM.symbol
+WHEN MATCHED AND (STATE.company != STREAM.company AND STREAM.company IS NOT NULL) THEN UPDATE SET company = STREAM.company
+WHEN MATCHED AND STREAM.company IS NULL THEN DELETE
+WHEN NOT MATCHED THEN INSERT VALUES (STREAM.symbol, STREAM.company);
+
 ```
 
 ### WEB STAT
