@@ -23,7 +23,9 @@ regionserver-1   entrypoint.sh regionserver       Up      16020/tcp, 16030/tcp
 zookeeper-1      entrypoint.sh -server 1 1 vnet   Up      2181/tcp, 2888/tcp, 3888/tcp
 
 # Try Getting Started (http://phoenix.apache.org/installation.html)
+```
 
+```
 $ docker-compose exec regionserver-1 bash
 > psql.py zookeeper-1.vnet /root/meta_data/stock_symbol/STOCK_SYMBOL.sql /root/data/stock_symbol/STOCK_SYMBOL.csv
 no rows upserted
@@ -40,6 +42,8 @@ Time: 0.044 sec(s)
 csv columns from database.
 CSV Upsert complete. 9 rows upserted
 Time: 0.02 sec(s)
+
+-- Bulk update second parameter to command line above
 
 > sqlline.py zookeeper-1.vnet
 Connected to: Phoenix (version 5.0)

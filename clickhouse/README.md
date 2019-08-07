@@ -12,7 +12,7 @@ docker-compose logs -f
 
 
 # https://clickhouse.yandex/docs/en/interfaces/cli/
-$ docker-compose exec clickhouse-client bash
+$ docker-compose exec client bash
 
 > cat /root/meta_data/stock_symbol/STOCK_SYMBOL.sql | clickhouse-client --host server --multiquery
 CRM	SalesForce.com
