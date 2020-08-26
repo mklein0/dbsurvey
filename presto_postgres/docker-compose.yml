@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+
+  postgres:
+    image: postgres:11.9
+    environment:
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=dbpassword
+      - POSTGRES_DB=database
+      - PGDATA=/data/db
+    volumes:
+      - ./meta_data:/root/meta_data:rw,cached
+      - ../data:/root/data:rw,cached
+
+  coordinator:
+    image: prestosql/presto:340
+    volumes:
+      - ./docker/coordinator/etc:/etc/presto:rw,cached
+      #- ./docker/common/etc/catalog:/usr/lib/presto/default/etc/catalog:rw,cached
+      #- ./docker/etc/catalog:/etc/catalog:rw,cached
+
+  worker_A:
+    image: prestosql/presto:340
+    depends_on:
+      - coordinator
+    volumes:
+      - ./docker/worker_A/etc:/etc/presto:rw,cached
+      #- ./docker/etc/catalog:/etc/catalog:rw,cached
+  worker_B:
+    image: prestosql/presto:340
+    depends_on:
+      - coordinator
+    volumes:
+      - ./docker/worker_B/etc:/etc/presto:rw,cached
+      #- ./docker/worker_2/etc:/usr/lib/presto/default/etc:rw,cached
+      #- ./docker/etc/catalog:/etc/catalog:rw,cached
