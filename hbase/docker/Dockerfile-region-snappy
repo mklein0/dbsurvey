@@ -1,0 +1,7 @@
+FROM bde2020/hbase-regionserver:1.0.0-hbase1.2.6
+
+MAINTAINER Aleksandar Mastilovic <amastilovic@sightmachine.com>
+
+COPY natives.tar.gz /natives.tar.gz
+
+RUN cd / && tar -xzf /natives.tar.gz -C /

@@ -1,0 +1,7 @@
+FROM bde2020/hadoop-namenode:latest
+
+MAINTAINER Aleksandar Mastilovic <amastilovic@sightmachine.com>
+
+COPY natives.tar.gz /natives.tar.gz
+
+RUN cd / && tar -xzf /natives.tar.gz -C / && rm -f /natives.tar.gz

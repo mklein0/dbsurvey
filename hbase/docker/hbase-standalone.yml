@@ -1,0 +1,88 @@
+version: "3"
+
+services:
+  zoo:
+    image: zookeeper:3.4.10
+    container_name: zoo
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+    volumes:
+      - hbase_zookeeper_data:/zookeeper-data
+    ports:
+      - 2181:2181
+
+  hbase-master:
+    # image: bde2020/hbase-master:1.0.0-hbase1.2.6
+    image: amastilovic/hbase-master-snappy:1.0
+    container_name: hbase-master
+    hostname: hbase-master
+    env_file:
+      - ./hbase-standalone.env
+    environment:
+      SERVICE_PRECONDITION: "zoo:2181"
+      HBASE_CONF_hbase_client_scanner_caching: 1000
+      HBASE_HEAPSIZE: "800"
+      JAVA_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+      LD_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+    volumes:
+      - hbase_data:/hbase-data
+    deploy:
+      resources:
+        limits:
+          memory: 900M
+    ports:
+      - 16010:16010
+
+  hbase-regionserver:
+    # image: bde2020/hbase-regionserver:1.0.0-hbase1.2.6
+    image: amastilovic/hbase-region-snappy:1.0
+    container_name: hbase-regionserver
+    hostname: hbase-regionserver
+    env_file:
+      - ./hbase-standalone.env
+    environment:
+      HBASE_CONF_hbase_client_scanner_caching: 1000
+      HBASE_CONF_hbase_regionserver_hostname: hbase-regionserver
+      SERVICE_PRECONDITION: "zoo:2181 hbase-master:16010"
+      HBASE_REGIONSERVER_OPTS: "-Xms3g -Xmx4g"
+      JAVA_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+      LD_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+    volumes:
+      - hbase_data:/hbase-data
+    deploy:
+      resources:
+        limits:
+          memory: 4100M
+    ports:
+      - 16030:16030
+
+  postgres:
+    container_name: hbpostgres
+    image: postgres:11.1
+    hostname: postgres
+    volumes:
+      # - postgres-data-volume:/var/lib/postgresql/data
+       - /opt/sightmachine/data/postgres:/var/lib/postgresql/data
+      # - /opt/sightmachine/ma/local/init-tenant-dbs.sh:/docker-entrypoint-initdb.d/init-tenant-dbs.sh
+    ports:
+      - "15432:5432"
+    environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=postgres
+
+  my-app:
+    image: openjdk:8u212-jdk-slim
+    container_name: my-app
+    hostname: my-app
+    volumes:
+       - /Users/amastilovic/proj/sm/hbase-app:/opt
+    command: tail -f /dev/null
+    deploy:
+      resources:
+        limits:
+          memory: 4000M
+
+volumes:
+  hbase_data:
+  hbase_zookeeper_data:
