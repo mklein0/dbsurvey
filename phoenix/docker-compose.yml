@@ -65,6 +65,8 @@ services:
 
     volumes_from:
       - namenode-1
+    volumes:
+      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
     command: hmaster-1
 
   regionserver-1:
@@ -75,11 +77,16 @@ services:
       default:
         aliases:
           - regionserver-1.vnet
-    expose: [16020, 16030]
+    ports:
+      - "5005:5005"
+    expose:
+      - 16020
+      - 16030
     depends_on: ["zookeeper-1"]
     volumes:
       - ./meta_data:/root/meta_data:rw,cached
       - ../data:/root/data:rw,cached
+      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
       
@@ -93,8 +100,10 @@ services:
         aliases:
           - queryserver-1.vnet
     image: smizy/apache-phoenix:5.0.0-alpine
-    expose: [8765]
+    ports: [8765]
     depends_on: ["zookeeper-1"]
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
+    volumes:
+      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
     command: bin/queryserver.py
