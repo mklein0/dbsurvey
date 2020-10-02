@@ -1,0 +1,78 @@
+version: '3.7'
+
+# Why did we persist data to the laptop instead of a docker volume?
+# Because we do not want to loose the data after we restart docker, which is required periodically
+# https://stackoverflow.com/questions/56521547/why-do-i-lose-data-if-docker-restarts
+
+services:
+
+  postgres:
+    container_name: hbpostgres
+    image: postgres:11.1
+    hostname: postgres
+    networks:
+      - hb-backend-net
+    volumes:
+      # - postgres-data-volume:/var/lib/postgresql/data
+       - /opt/sightmachine/data/postgres:/var/lib/postgresql/data
+      # - /opt/sightmachine/ma/local/init-tenant-dbs.sh:/docker-entrypoint-initdb.d/init-tenant-dbs.sh
+    ports:
+      - "15432:5432"
+    environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=postgres
+
+  # hbase-master:
+  #   image: harisekhon/hbase:${VERSION:-latest}
+  #   command: master
+  #   networks:
+  #     - hb-backend-net
+  #   ports:
+  #     - 16000:16000
+  #     - 16010:16010
+  # hbase-regionserver:
+  #   image: harisekhon/hbase:${VERSION:-latest}
+  #   command: regionserver
+  #   networks:
+  #     - hb-backend-net
+  #   ports:
+  #     - 16030:16030
+  #     - 16201:16201
+  #     - 16301:16301
+  # hbase-thrift:
+  #   image: harisekhon/hbase:${VERSION:-latest}
+  #   command: thrift
+  #   networks:
+  #     - hb-backend-net
+  #   ports:
+  #     - 9090:9090
+  #     - 9095:9095
+  # hbase-stargate:
+  #   image: harisekhon/hbase:${VERSION:-latest}
+  #   command: stargate
+  #   networks:
+  #     - hb-backend-net
+  #   ports:
+  #     - 8080:8080
+  #     - 8085:8085
+  # zookeeper:
+  #   image: harisekhon/zookeeper:latest
+  #   networks:
+  #     - hb-backend-net
+  #   ports:
+  #     - 2181:2181
+
+  # test-postgres:
+  #   container_name: test-postgres
+  #   image: postgres:11.1
+  #   hostname: test-postgres
+  #   networks:
+  #     - backend-net
+  #   tmpfs:
+  #     - /var/lib/postgresql/data
+  #   volumes:
+  #     - /opt/sightmachine/ma/local/init-test-tenant-db.sh:/docker-entrypoint-initdb.d/init-test-tenant-db.sh
+
+networks:
+  hb-backend-net:
+    driver: bridge

@@ -1,0 +1,161 @@
+version: "3"
+
+services:
+  namenode:
+    # image: bde2020/hadoop-namenode:latest
+    image: amastilovic/namenode-snappy:1.0
+    container_name: namenode
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    environment:
+      CLUSTER_NAME: "test"
+    env_file:
+      - ./hadoop.env
+    ports:
+      - 9870:9870
+      # - 50070:50070
+
+  datanode:
+    # image: bde2020/hadoop-datanode:latest
+    image: amastilovic/datanode-snappy:1.0
+    container_name: datanode
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
+    ports:
+      - 9864:9864
+      # - 50075:50075
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:latest
+    container_name: resourcemanager
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864"
+      # SERVICE_PRECONDITION: "namenode:50070 datanode:50075"
+    env_file:
+      - ./hadoop.env
+    ports:
+      - 8088:8088
+
+  nodemanager1:
+    image: bde2020/hadoop-nodemanager:latest
+    # image: bde2020/hadoop-nodemanager:2.0.0-hadoop2.7.4-java8
+    container_name: nodemanager
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 resourcemanager:8088"
+      # SERVICE_PRECONDITION: "namenode:50070 datanode:50075 resourcemanager:8088"
+    env_file:
+      - ./hadoop.env
+    ports:
+      - 8042:8042
+
+  # historyserver:
+  #   image: bde2020/hadoop-historyserver:2.0.0-hadoop2.7.4-java8
+  #   container_name: historyserver
+  #   volumes:
+  #     - hadoop_historyserver:/hadoop/yarn/timeline
+  #   environment:
+  #     SERVICE_PRECONDITION: "namenode:50070 datanode:50075 resourcemanager:8088"
+  #   env_file:
+  #     - ./hadoop.env
+  #   ports:
+  #     - 8188:8188
+
+  zoo_1:
+    image: zookeeper:3.4.10
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=hbase-docker_zoo_2_1:2888:3888
+    volumes:
+      - zoo_data:/data
+      - zoo_datalog:/datalog
+    expose:
+      - 2181
+
+  zoo_2:
+    image: zookeeper:3.4.10
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=hbase-docker_zoo_1_1:2888:3888 server.2=0.0.0.0:2888:3888
+    expose:
+      - 2181
+
+  hbase-master:
+    # image: bde2020/hbase-master:1.0.0-hbase1.2.6
+    image: amastilovic/hbase-master-snappy:1.0
+    container_name: hbase-master
+    hostname: hbase-master
+    env_file:
+      - ./hbase-distributed-local.env
+    volumes:
+       - ./conf/regionservers:/etc/hbase/regionservers
+       - ./conf/backup-masters:/etc/hbase/backup-masters
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hbase-docker_zoo_1_1:2181"
+      HBASE_CONF_hbase_client_scanner_caching: 1000
+      HBASE_HEAPSIZE: "800"
+      JAVA_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+      LD_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+    deploy:
+      resources:
+        limits:
+          memory: 900M
+    expose:
+      - 16010
+
+  hbase-regionserver:
+    # image: bde2020/hbase-regionserver:1.0.0-hbase1.2.6
+    image: amastilovic/hbase-region-snappy:1.0
+    # container_name: hbase-regionserver  # disabled so we can spin up multiple region servers
+    # hostname: hbase-regionserver  # disabled so we can spin up multiple region servers
+    env_file:
+      - ./hbase-distributed-local.env
+    volumes:
+       - ./conf/regionservers:/etc/hbase/regionservers
+       - ./conf/backup-masters:/etc/hbase/backup-masters
+    environment:
+      HBASE_CONF_hbase_client_scanner_caching: 1000
+      # HBASE_CONF_hbase_regionserver_hostname: hbase-regionserver  # disabled so we can spin up multiple region servers
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hbase-docker_zoo_1_1:2181 hbase-master:16010"
+      HBASE_REGIONSERVER_OPTS: "-Xms3g -Xmx4g"
+      JAVA_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+      LD_LIBRARY_PATH: "/opt/hadoop-3.2.1/lib/native:/usr/lib/x86_64-linux-gnu"
+    deploy:
+      resources:
+        limits:
+          memory: 4100M
+    expose:
+      - 16030
+
+  postgres:
+    container_name: hbpostgres
+    image: postgres:11.1
+    hostname: postgres
+    volumes:
+       - /opt/sightmachine/data/postgres:/var/lib/postgresql/data
+    ports:
+      - "15432:5432"
+    environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=postgres
+
+  my-app:
+    image: openjdk:8u212-jdk-slim
+    container_name: my-app
+    hostname: my-app
+    volumes:
+       - /Users/amastilovic/proj/sm/hbase-app:/opt
+    command: tail -f /dev/null
+    deploy:
+      resources:
+        limits:
+          memory: 4000M
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  zoo_data:
+  zoo_datalog:
