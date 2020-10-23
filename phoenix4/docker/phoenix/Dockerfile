@@ -51,7 +51,7 @@ RUN set -x \
         ) \
     && wget -q -O - ${mirror_url}hbase/${HBASE_VERSION}/hbase-${HBASE_VERSION}-bin.tar.gz \
         | tar -xzf - -C /usr/local \
-    && ln -s /usr/local/hbase-${HBASE_VERSION} /usr/local/hbase-${HBASE_VERSION:0:3} \
+#    && ln -s /usr/local/hbase-${HBASE_VERSION} /usr/local/hbase-${HBASE_VERSION:0:3} \
     ## user/dir/permmsion
     && adduser -D  -g '' -s /sbin/nologin -u 1000 docker \
     && for user in hadoop hbase; do \

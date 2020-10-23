@@ -66,7 +66,7 @@ services:
     volumes_from:
       - namenode-1
     volumes:
-      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
+      - ./docker/hbase/conf:/usr/local/hbase-1.4.13/conf:rw,cached
     command: hmaster-1
 
   regionserver-1:
@@ -86,7 +86,7 @@ services:
     volumes:
       - ./meta_data:/root/meta_data:rw,cached
       - ../data:/root/data:rw,cached
-      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
+      - ./docker/hbase/conf:/usr/local/hbase-1.4.13/conf:rw,cached
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
       
@@ -105,5 +105,5 @@ services:
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
     volumes:
-      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
+      - ./docker/hbase/conf:/usr/local/hbase-1.4.13/conf:rw,cached
     command: bin/queryserver.py

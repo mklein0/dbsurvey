@@ -1,3 +1,4 @@
+.DS_Store
 *.egg
 *.egg-info
 .eggs
@@ -13,6 +14,9 @@ coverage/
 build
 dist/
 docs/_build
+
+# Local data to use. 
+data/local
 
 # IDE users, please keep your data locally
 .idea/
