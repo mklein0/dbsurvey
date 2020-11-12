@@ -1,0 +1,44 @@
+# https://crate.io/docs/crate/howtos/en/latest/deployment/containers/docker.html
+version: "3"
+services:
+  crate-1:
+    container_name: crate-1
+    image: crate:4.3.1
+    environment:
+      - CRATE_HEAP_SIZE=2g
+    ports:
+      - "4201:4200"
+    command:
+      - "-Cnetwork.host=_site_"
+      - "-Cnode.name=crate-1"
+      - "-Cdiscovery.seed_hosts=crate-2,crate-3"
+      - "-Ccluster.initial_master_nodes=crate-1,crate-2"
+      - "-Cgateway.expected_nodes=3"
+      - "-Cgateway.recover_after_nodes=3"
+  crate-2:
+    container_name: crate-2
+    image: crate:4.3.1
+    environment:
+      - CRATE_HEAP_SIZE=2g
+    ports:
+      - "4202:4200"
+    command:
+      - "-Cnetwork.host=_site_"
+      - "-Cnode.name=crate-2"
+      - "-Cdiscovery.seed_hosts=crate-1,crate-3"
+      - "-Ccluster.initial_master_nodes=crate-1,crate-2"
+      - "-Cgateway.expected_nodes=3"
+      - "-Cgateway.recover_after_nodes=2"
+  crate-3:
+    container_name: crate-3
+    image: crate:4.3.1
+    environment:
+      - CRATE_HEAP_SIZE=2g
+    ports:
+      - "4203:4200"
+    command:
+      - "-Cnetwork.host=_site_"
+      - "-Cnode.name=crate-3"
+      - "-Cdiscovery.seed_hosts=crate-1,crate-2"
+      - "-Cgateway.expected_nodes=3"
+      - "-Cgateway.recover_after_nodes=2"
