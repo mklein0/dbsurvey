@@ -52,7 +52,7 @@ services:
   hmaster-1:
     container_name: hmaster-1
     hostname: hmaster-1.vnet
-    image: dbsurvey/phoenix:4.15.0-hbase1.4.13-alpine
+    image: dbsurvey/phoenix:4.14.3-hbase1.4.13-alpine
     networks:
       default:
         aliases:
@@ -72,7 +72,7 @@ services:
   regionserver-1:
     container_name: regionserver-1
     hostname: regionserver-1.vnet
-    image: dbsurvey/phoenix:4.15.0-hbase1.4.13-alpine
+    image: dbsurvey/phoenix:4.14.3-hbase1.4.13-alpine
     networks:
       default:
         aliases:
@@ -99,7 +99,7 @@ services:
       default:
         aliases:
           - queryserver-1.vnet
-    image: dbsurvey/phoenix:4.15.0-hbase1.4.13-alpine
+    image: dbsurvey/phoenix:4.14.3-hbase1.4.13-alpine
     ports: [8765]
     depends_on: ["zookeeper-1"]
     environment:
