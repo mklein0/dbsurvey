@@ -2,16 +2,16 @@ version: "2"
 services:
 
   zookeeper-1:
-    container_name: zookeeper-1    
+    container_name: zookeeper-1
     hostname: zookeeper-1.vnet
     networks:
       default:
         aliases:
           - zookeeper-1.vnet
-    image: smizy/zookeeper:3.4-alpine
+    image: dbsurvey/zookeeper:3.4.10-alpine
     environment:
       - SERVICE_2181_NAME=zookeeper
-      
+
     command: -server 1 1 vnet
 
   namenode-1:
@@ -21,14 +21,15 @@ services:
       default:
         aliases:
           - namenode-1.vnet
-    image: smizy/hadoop-base:2.7.6-alpine
-    expose: ["8020"]
-    ports:  ["50070"]
+    image: dbsurvey/hadoop:2.10.1-alpine
+    expose:
+      - "8020"
+      - "50070"
     environment:
-      - HADOOP_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
+      - HADOOP_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181
       - HADOOP_HEAPSIZE=1000
       - HADOOP_NAMENODE_HA=
-      
+
     entrypoint: entrypoint.sh
     command: namenode-1
 
@@ -39,26 +40,26 @@ services:
       default:
         aliases:
           - datanode-1.vnet
-    image: smizy/hadoop-base:2.7.6-alpine
+    image: dbsurvey/hadoop:2.10.1-alpine
     expose: ["50010", "50020", "50075"]
     environment:
-      - HADOOP_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
+      - HADOOP_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181
       - HADOOP_HEAPSIZE=1000
       - HADOOP_NAMENODE_HA=
-      
+
     entrypoint: entrypoint.sh
     command: datanode
 
   hmaster-1:
     container_name: hmaster-1
     hostname: hmaster-1.vnet
-    image: smizy/apache-phoenix:5.0.0-alpine
+    image: dbsurvey/phoenix:5.1.2-hbase2.4.4-alpine
     networks:
       default:
         aliases:
           - hmaster-1.vnet
-    expose: [16000]
-    ports:  [16010]
+    expose:
+      - 16000
     depends_on: ["zookeeper-1"]
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181
@@ -66,30 +67,29 @@ services:
     volumes_from:
       - namenode-1
     volumes:
-      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
+      - ./docker/hbase/conf:/usr/local/hbase-2.4.4/conf:rw,cached
     command: hmaster-1
 
   regionserver-1:
     container_name: regionserver-1
     hostname: regionserver-1.vnet
-    image: smizy/apache-phoenix:5.0.0-alpine
+    image: dbsurvey/phoenix:5.1.2-hbase2.4.4-alpine
     networks:
       default:
         aliases:
           - regionserver-1.vnet
-    ports:
-      - "5005:5005"
     expose:
+      - 5005
       - 16020
       - 16030
     depends_on: ["zookeeper-1"]
     volumes:
       - ./meta_data:/root/meta_data:rw,cached
       - ../data:/root/data:rw,cached
-      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
+      - ./docker/hbase/conf:/usr/local/hbase-2.4.4/conf:rw,cached
     environment:
-      - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
-      
+      - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181
+
     command: regionserver
 
   queryserver-1:
@@ -99,11 +99,14 @@ services:
       default:
         aliases:
           - queryserver-1.vnet
-    image: smizy/apache-phoenix:5.0.0-alpine
-    ports: [8765]
+    image: dbsurvey/phoenix:5.1.2-hbase2.4.4-alpine
+    expose:
+      - 8765
+    ports:
+      - '8765:8765'
     depends_on: ["zookeeper-1"]
     environment:
-      - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
+      - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181
     volumes:
-      - ./docker/hbase/conf:/usr/local/hbase-2.0.1/conf:rw,cached
-    command: bin/queryserver.py
+      - ./docker/hbase/conf:/usr/local/hbase-2.4.4/conf:rw,cached
+    command: client/bin/queryserver.py

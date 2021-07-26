@@ -22,8 +22,9 @@ services:
         aliases:
           - namenode-1.vnet
     image: dbsurvey/hadoop:2.10.1-alpine
-    expose: ["8020"]
-    ports:  ["50070"]
+    expose: 
+      - "8020"
+      - "50070"
     environment:
       - HADOOP_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
       - HADOOP_HEAPSIZE=1000
@@ -57,8 +58,8 @@ services:
       default:
         aliases:
           - hmaster-1.vnet
-    expose: [16000]
-    ports:  [16010]
+    expose: 
+      - 16000
     depends_on: ["zookeeper-1"]
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181
@@ -77,9 +78,8 @@ services:
       default:
         aliases:
           - regionserver-1.vnet
-    ports:
-      - "5005:5005"
     expose:
+      - 5005
       - 16020
       - 16030
     depends_on: ["zookeeper-1"]
@@ -100,7 +100,10 @@ services:
         aliases:
           - queryserver-1.vnet
     image: dbsurvey/phoenix:4.14.3-hbase1.4.13-alpine
-    ports: [8765]
+    expose:
+      - 8765
+    ports:
+      - '8765:8765'
     depends_on: ["zookeeper-1"]
     environment:
       - HBASE_ZOOKEEPER_QUORUM=zookeeper-1.vnet:2181 
